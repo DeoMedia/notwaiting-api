@@ -24,13 +24,26 @@ const app = express()
 const PORT = process.env.PORT ?? 3001
 
 // ── CORS ─────────────────────────────────────────────────────
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.ADMIN_URL,
+  'http://localhost:5177',
+  'http://localhost:5200',
+  'http://localhost:5173',
+  'https://notwaiting.africa',
+  'https://admin.notwaiting.africa',
+].filter(Boolean)
+
 app.use(
   cors({
-    origin: [
-      process.env.FRONTEND_URL ?? 'http://localhost:5177',
-      process.env.ADMIN_URL ?? 'http://localhost:5200',
-    ],
-    methods: ['GET', 'POST', 'OPTIONS'],
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true)
+      }
+
+      return callback(new Error(`CORS blocked origin: ${origin}`))
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 )

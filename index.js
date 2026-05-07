@@ -30,6 +30,7 @@ const allowedOrigins = [
   'http://localhost:5177',
   'http://localhost:5200',
   'http://localhost:5173',
+  'https://notwaiting-frontend.vercel.app',
   'https://notwaiting.africa',
   'https://admin.notwaiting.africa',
 ].filter(Boolean)

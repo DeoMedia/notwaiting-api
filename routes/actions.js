@@ -3,29 +3,26 @@
 // Actions: 'got_mark' | 'shared_social' | 'shared_story'
 
 import { Router } from 'express'
-import { getSupabase } from '../lib/supabase.js'
 import { apiLimiter } from '../middleware/rateLimiter.js'
+import { ALLOWED_ACTIONS } from '../lib/constants.js'
+import { findSignerById } from '../services/signers.js'
+import { recordAction } from '../services/actions.js'
 
 const router = Router()
-
-const ALLOWED = ['got_mark', 'shared_social', 'shared_story']
 
 router.post('/', apiLimiter, async (req, res) => {
   const { signerId, action, metadata } = req.body ?? {}
 
   if (!signerId) return res.status(422).json({ error: 'signerId is required' })
   if (!action)   return res.status(422).json({ error: 'action is required' })
-  if (!ALLOWED.includes(action)) {
-    return res.status(422).json({ error: `Unknown action. Must be one of: ${ALLOWED.join(', ')}` })
+  if (!ALLOWED_ACTIONS.includes(action)) {
+    return res.status(422).json({ error: `Unknown action. Must be one of: ${ALLOWED_ACTIONS.join(', ')}` })
   }
 
-  const supabase = getSupabase()
-  const { error } = await supabase.from('actions').insert({
-    signer_id: signerId,
-    action,
-    metadata: metadata ?? null
-  })
+  const { data: signer, error: signerErr } = await findSignerById(signerId)
+  if (signerErr || !signer) return res.status(404).json({ error: 'Signer not found' })
 
+  const { error } = await recordAction({ signerId, action, metadata: metadata ?? null })
   if (error) {
     console.error('[actions] insert error:', error)
     return res.status(500).json({ error: 'Could not record action' })

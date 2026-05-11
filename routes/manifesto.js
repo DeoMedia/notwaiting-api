@@ -5,15 +5,17 @@
 import { Router } from 'express'
 import { getSupabase } from '../lib/supabase.js'
 import { manifestoLimiter } from '../middleware/rateLimiter.js'
+import { TAG_KEYWORDS } from '../lib/constants.js'
 
 const router = Router()
-
-const WAVE_TAGS = ['fintech','finance','tech','technology','health','music','agriculture','education','climate','media','fashion','sports','film','policy']
 
 function inferWaveTag(wave) {
   if (!wave) return null
   const lower = wave.toLowerCase()
-  return WAVE_TAGS.find(tag => lower.includes(tag)) ?? null
+  for (const [keyword, tag] of TAG_KEYWORDS) {
+    if (lower.includes(keyword)) return tag
+  }
+  return null
 }
 
 function sanitise(str, max) {

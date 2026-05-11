@@ -23,6 +23,10 @@ import { apiLimiter } from './middleware/rateLimiter.js'
 const app = express()
 const PORT = process.env.PORT ?? 3001
 
+// Trust the first proxy hop so express-rate-limit reads the real client IP
+// from X-Forwarded-For when deployed behind Vercel/Railway/etc.
+app.set('trust proxy', 1)
+
 // ── CORS ─────────────────────────────────────────────────────
 const allowedOrigins = [
   process.env.FRONTEND_URL,

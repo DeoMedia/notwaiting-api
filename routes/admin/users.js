@@ -93,6 +93,8 @@ router.post('/invite', requireAdmin('super_admin'), async (req, res) => {
 
   if (roleError) {
     console.error('[admin/users role insert]', roleError)
+    // Roll back: delete the orphaned auth user so invite can be retried cleanly
+    await serviceClient.auth.admin.deleteUser(inviteData.user.id)
     return res.status(500).json({ error: 'User invited but role could not be assigned' })
   }
 

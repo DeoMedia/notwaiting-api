@@ -12,6 +12,7 @@ import storiesRoutes from './routes/stories.js'
 import actionsRoutes from './routes/actions.js'
 import dashboardRoutes from './routes/dashboard.js'
 import statsRoutes from './routes/stats.js'
+import slideConfigRoutes from './routes/slideConfig.js'
 import adminStatsRoutes   from './routes/admin/stats.js'
 import adminSignersRoutes from './routes/admin/signers.js'
 import adminStoriesRoutes from './routes/admin/stories.js'
@@ -22,6 +23,10 @@ import { apiLimiter } from './middleware/rateLimiter.js'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
+
+// Trust the first proxy hop so express-rate-limit reads the real client IP
+// from X-Forwarded-For when deployed behind Vercel/Railway/etc.
+app.set('trust proxy', 1)
 
 // ── CORS ─────────────────────────────────────────────────────
 const allowedOrigins = [
@@ -60,6 +65,7 @@ app.use('/api/stories', storiesRoutes)
 app.use('/api/actions', actionsRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api/slide-config', slideConfigRoutes)
 app.use('/api/admin/stats',   adminStatsRoutes)
 app.use('/api/admin/signers', adminSignersRoutes)
 app.use('/api/admin/stories', adminStoriesRoutes)

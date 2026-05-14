@@ -30,13 +30,14 @@ app.set('trust proxy', 1)
 
 // ── CORS ─────────────────────────────────────────────────────
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
+  ...(process.env.FRONTEND_URL ?? '').split(',').map(u => u.trim().replace(/\/$/, '')).filter(Boolean),
   process.env.ADMIN_URL,
   'http://localhost:5177',
   'http://localhost:5200',
   'http://localhost:5173',
   'https://notwaiting-frontend.vercel.app',
   'https://notwaiting.africa',
+  'https://www.notwaiting.africa',
   'https://admin.notwaiting.africa',
 ].filter(Boolean)
 

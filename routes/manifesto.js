@@ -28,16 +28,20 @@ router.post('/', manifestoLimiter, async (req, res) => {
   const firstName = sanitise(req.body.firstName, 60)
   const country   = sanitise(req.body.country, 80)
   const wave      = sanitise(req.body.wave, 120) || null
+  const email     = sanitise(req.body.email, 254) || null
 
   if (!firstName) return res.status(422).json({ error: 'First name is required' })
   if (!country)   return res.status(422).json({ error: 'Country is required' })
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(422).json({ error: 'Please enter a valid email address' })
+  }
 
   const waveTag = inferWaveTag(wave)
   const supabase = getSupabase()
 
   const { data: signer, error } = await supabase
     .from('signers')
-    .insert({ first_name: firstName, country, wave, wave_tag: waveTag })
+    .insert({ first_name: firstName, country, wave, wave_tag: waveTag, email })
     .select('id')
     .single()
 

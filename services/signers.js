@@ -2,11 +2,11 @@
 
 import { getSupabase } from '../lib/supabase.js'
 
-export async function insertSigner({ firstName, country, wave, waveTag }) {
+export async function insertSigner({ firstName, country, wave, waveTag, email }) {
   const supabase = getSupabase()
   return supabase
     .from('signers')
-    .insert({ first_name: firstName, country, wave, wave_tag: waveTag })
+    .insert({ first_name: firstName, country, wave, wave_tag: waveTag, email: email || null })
     .select('id')
     .single()
 }

@@ -88,7 +88,8 @@ begin
 end$$;
 
 -- ── coalition_stats view ──────────────────────────────────────
-create or replace view public.coalition_stats as
+drop view if exists public.coalition_stats;
+create view public.coalition_stats as
 select
   count(*)                                                             as total_signers,
   count(distinct country)                                              as total_countries,
@@ -102,7 +103,8 @@ select
 from public.signers;
 
 -- ── wave_breakdown view ───────────────────────────────────────
-create or replace view public.wave_breakdown as
+drop view if exists public.wave_breakdown;
+create view public.wave_breakdown as
 select
   wave_tag,
   count(*) as signer_count
@@ -112,7 +114,8 @@ group by wave_tag
 order by signer_count desc;
 
 -- ── country_breakdown view ────────────────────────────────────
-create or replace view public.country_breakdown as
+drop view if exists public.country_breakdown;
+create view public.country_breakdown as
 select
   country,
   count(*) as signer_count

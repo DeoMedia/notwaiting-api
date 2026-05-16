@@ -85,8 +85,21 @@ create policy "deny_all_actions_anon"
 -- This SECURITY DEFINER function is granted to public and authenticated
 -- by the Supabase dump. It should only be callable by postgres (it fires
 -- as an event trigger, not via direct invocation).
-revoke execute on function public.rls_auto_enable() from anon;
-revoke execute on function public.rls_auto_enable() from authenticated;
+do $$
+begin
+  if exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'rls_auto_enable'
+      and pg_get_function_identity_arguments(p.oid) = ''
+  ) then
+    revoke execute on function public.rls_auto_enable() from anon;
+    revoke execute on function public.rls_auto_enable() from authenticated;
+  end if;
+end
+$$;
 
 
 -- ── 4. Auth RLS Initialization Plan — admin_users ────────────

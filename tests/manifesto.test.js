@@ -56,7 +56,7 @@ describe('POST /api/manifesto', () => {
 
     const res = await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: 'Amara', country: 'nigeria', wave: 'I build in fintech' })
+      .send({ firstName: 'Amara', country: 'nigeria', email: 'amara@example.com', wave: 'I build in fintech' })
 
     expect(res.status).toBe(201)
     expect(res.body.success).toBe(true)
@@ -75,10 +75,28 @@ describe('POST /api/manifesto', () => {
   it('returns 422 when country is missing', async () => {
     const res = await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: 'Kwame' })
+      .send({ firstName: 'Kwame', email: 'kwame@example.com' })
 
     expect(res.status).toBe(422)
     expect(res.body.error).toMatch(/country/i)
+  })
+
+  it('returns 422 when email is missing', async () => {
+    const res = await request(makeApp())
+      .post('/api/manifesto')
+      .send({ firstName: 'Kwame', country: 'ghana' })
+
+    expect(res.status).toBe(422)
+    expect(res.body.error).toMatch(/email/i)
+  })
+
+  it('returns 422 when email is invalid', async () => {
+    const res = await request(makeApp())
+      .post('/api/manifesto')
+      .send({ firstName: 'Kwame', country: 'ghana', email: 'not-an-email' })
+
+    expect(res.status).toBe(422)
+    expect(res.body.error).toMatch(/valid email/i)
   })
 
   it('returns 422 when both firstName and country are missing', async () => {
@@ -101,10 +119,10 @@ describe('POST /api/manifesto', () => {
 
     const res = await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: 'Duplicate', country: 'kenya' })
+      .send({ firstName: 'Duplicate', country: 'kenya', email: 'dup@example.com' })
 
     expect(res.status).toBe(409)
-    expect(res.body.error).toMatch(/already signed/i)
+    expect(res.body.error).toMatch(/already been used to sign/i)
   })
 
   it('returns 500 on unexpected Supabase insert error', async () => {
@@ -119,7 +137,7 @@ describe('POST /api/manifesto', () => {
 
     const res = await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: 'Test', country: 'nigeria' })
+      .send({ firstName: 'Test', country: 'nigeria', email: 'test@example.com' })
 
     expect(res.status).toBe(500)
     expect(res.body.error).toMatch(/could not save/i)
@@ -144,7 +162,7 @@ describe('POST /api/manifesto', () => {
 
     await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: '<script>alert(1)</script>', country: 'ghana' })
+      .send({ firstName: '<script>alert(1)</script>', country: 'ghana', email: 'xss@example.com' })
 
     expect(insertedFirstName).not.toContain('<')
     expect(insertedFirstName).not.toContain('>')
@@ -170,7 +188,7 @@ describe('POST /api/manifesto', () => {
     const longName = 'A'.repeat(100)
     await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: longName, country: 'ghana' })
+      .send({ firstName: longName, country: 'ghana', email: 'trunc@example.com' })
 
     expect(insertedFirstName.length).toBeLessThanOrEqual(60)
   })
@@ -194,7 +212,7 @@ describe('POST /api/manifesto', () => {
 
     await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: 'Temi', country: 'nigeria', wave: 'Building a fintech startup' })
+      .send({ firstName: 'Temi', country: 'nigeria', email: 'temi@example.com', wave: 'Building a fintech startup' })
 
     expect(insertedData.wave_tag).toBe('fintech')
   })
@@ -218,7 +236,7 @@ describe('POST /api/manifesto', () => {
 
     await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: 'Test', country: 'nigeria', wave: 'I work in finance' })
+      .send({ firstName: 'Test', country: 'nigeria', email: 'test1@example.com', wave: 'I work in finance' })
 
     expect(insertedData.wave_tag).toBe('fintech')
   })
@@ -242,7 +260,7 @@ describe('POST /api/manifesto', () => {
 
     await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: 'Test', country: 'nigeria', wave: 'Building in technology' })
+      .send({ firstName: 'Test', country: 'nigeria', email: 'test2@example.com', wave: 'Building in technology' })
 
     expect(insertedData.wave_tag).toBe('tech')
   })
@@ -266,7 +284,7 @@ describe('POST /api/manifesto', () => {
 
     await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: 'Test', country: 'nigeria', wave: 'I build in pottery' })
+      .send({ firstName: 'Test', country: 'nigeria', email: 'test3@example.com', wave: 'I build in pottery' })
 
     expect(insertedData.wave_tag).toBeNull()
   })
@@ -292,7 +310,7 @@ describe('POST /api/manifesto', () => {
 
     await request(makeApp())
       .post('/api/manifesto')
-      .send({ firstName: 'Ade', country: 'nigeria' })
+      .send({ firstName: 'Ade', country: 'nigeria', email: 'ade@example.com' })
 
     expect(actionData.action).toBe('signed')
     expect(actionData.signer_id).toBe('signer-id-99')

@@ -32,7 +32,8 @@ router.post('/', manifestoLimiter, async (req, res) => {
 
   if (!firstName) return res.status(422).json({ error: 'First name is required' })
   if (!country)   return res.status(422).json({ error: 'Country is required' })
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!email)     return res.status(422).json({ error: 'Email is required' })
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(422).json({ error: 'Please enter a valid email address' })
   }
 
@@ -47,7 +48,7 @@ router.post('/', manifestoLimiter, async (req, res) => {
 
   if (error) {
     if (error.code === '23505') {
-      return res.status(409).json({ error: 'Looks like you have already signed! Thank you.' })
+      return res.status(409).json({ error: 'This email has already been used to sign. Thank you!' })
     }
     console.error('[manifesto] insert error:', error)
     return res.status(500).json({ error: 'Could not save your signature. Please try again.' })

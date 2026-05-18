@@ -113,7 +113,14 @@ describe('POST /api/manifesto', () => {
     mockClient.from.mockReturnValueOnce({
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: { code: '23505' } })
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: {
+              code: '23505',
+              message: 'duplicate key value violates unique constraint "signers_email_unique"',
+              details: 'Key (email)=(dup@example.com) already exists.',
+            },
+          })
         })
       })
     })
@@ -141,7 +148,14 @@ describe('POST /api/manifesto', () => {
     mockClient.from.mockReturnValueOnce({
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: { code: '23505' } })
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: {
+              code: '23505',
+              message: 'duplicate key value violates unique constraint "signers_email_unique"',
+              details: 'Key (email)=(dup@example.com) already exists.',
+            },
+          })
         })
       })
     })
@@ -159,6 +173,33 @@ describe('POST /api/manifesto', () => {
 
     expect(res.status).toBe(409)
     expect(res.body.error).toMatch(/already been used to sign/i)
+  })
+
+  it('returns 409 with a non-misleading message on non-email unique conflict (e.g. legacy name+country index)', async () => {
+    const mockClient = mockSupabase()
+    mockClient.from.mockReturnValueOnce({
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: {
+              code: '23505',
+              message: 'duplicate key value violates unique constraint "signers_name_country_unique"',
+              details: 'Key (lower(trim(first_name)), country)=(temitope, Nigeria) already exists.',
+            },
+          })
+        })
+      })
+    })
+
+    const res = await request(makeApp())
+      .post('/api/manifesto')
+      .send({ firstName: 'TEMITOPE', country: 'Nigeria', email: 'fresh@example.com' })
+
+    expect(res.status).toBe(409)
+    // Crucially, this MUST NOT claim the email was already used — that was the misleading bug.
+    expect(res.body.error).not.toMatch(/email/i)
+    expect(res.body.error).toMatch(/duplicate/i)
   })
 
   it('returns 500 on unexpected Supabase insert error', async () => {

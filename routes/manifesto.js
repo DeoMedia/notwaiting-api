@@ -48,19 +48,28 @@ router.post('/', manifestoLimiter, async (req, res) => {
 
   if (error) {
     if (error.code === '23505') {
-      // Email already in DB (e.g. user signed via the inline form then tried the full form).
-      // Look up the existing signer so the frontend can continue to publish their story.
-      const { data: existing } = await supabase
-        .from('signers')
-        .select('id')
-        .eq('email', email)
-        .single()
+      const violated = `${error.message ?? ''} ${error.details ?? ''}`.toLowerCase()
+      const isEmailConflict = violated.includes('email')
 
-      if (existing) {
-        return res.status(200).json({ success: true, signerId: existing.id, alreadySigned: true })
+      // If the same email is already signed (e.g. user signed via the inline form then
+      // tried the full form), return the existing signerId so the flow can continue.
+      if (isEmailConflict) {
+        const { data: existing } = await supabase
+          .from('signers')
+          .select('id')
+          .eq('email', email)
+          .single()
+
+        if (existing) {
+          return res.status(200).json({ success: true, signerId: existing.id, alreadySigned: true })
+        }
+        return res.status(409).json({ error: 'This email has already been used to sign. Thank you!' })
       }
 
-      return res.status(409).json({ error: 'This email has already been used to sign. Thank you!' })
+      // Any other unique constraint (e.g. the legacy name+country index if a migration
+      // hasn't been applied). Log the actual constraint so it's diagnosable.
+      console.error('[manifesto] unique-constraint conflict:', error.message, error.details)
+      return res.status(409).json({ error: 'Could not save your signature due to a duplicate entry. Please contact support.' })
     }
     console.error('[manifesto] insert error:', error)
     return res.status(500).json({ error: 'Could not save your signature. Please try again.' })

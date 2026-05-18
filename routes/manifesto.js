@@ -48,6 +48,18 @@ router.post('/', manifestoLimiter, async (req, res) => {
 
   if (error) {
     if (error.code === '23505') {
+      // Email already in DB (e.g. user signed via the inline form then tried the full form).
+      // Look up the existing signer so the frontend can continue to publish their story.
+      const { data: existing } = await supabase
+        .from('signers')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+      if (existing) {
+        return res.status(200).json({ success: true, signerId: existing.id, alreadySigned: true })
+      }
+
       return res.status(409).json({ error: 'This email has already been used to sign. Thank you!' })
     }
     console.error('[manifesto] insert error:', error)

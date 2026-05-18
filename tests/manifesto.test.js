@@ -107,12 +107,48 @@ describe('POST /api/manifesto', () => {
     expect(res.status).toBe(422)
   })
 
-  it('returns 409 on duplicate signer (error code 23505)', async () => {
+  it('returns 200 with existing signerId on duplicate email (error code 23505)', async () => {
+    const mockClient = mockSupabase()
+    // First from(): the failed insert
+    mockClient.from.mockReturnValueOnce({
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: { code: '23505' } })
+        })
+      })
+    })
+    // Second from(): the fallback email lookup
+    mockClient.from.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: 'existing-uuid' }, error: null })
+        })
+      })
+    })
+
+    const res = await request(makeApp())
+      .post('/api/manifesto')
+      .send({ firstName: 'Duplicate', country: 'kenya', email: 'dup@example.com' })
+
+    expect(res.status).toBe(200)
+    expect(res.body.success).toBe(true)
+    expect(res.body.signerId).toBe('existing-uuid')
+    expect(res.body.alreadySigned).toBe(true)
+  })
+
+  it('returns 409 on duplicate email when lookup also fails', async () => {
     const mockClient = mockSupabase()
     mockClient.from.mockReturnValueOnce({
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
           single: vi.fn().mockResolvedValue({ data: null, error: { code: '23505' } })
+        })
+      })
+    })
+    mockClient.from.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } })
         })
       })
     })
